@@ -9,6 +9,14 @@ using UnityEngine;
 /// </summary>
 public class SaveLoad
 {
+    // AES設定値
+    // ======================================== //
+    private int aesKeySize = 128;               // 鍵のサイズを指定する
+    private int aesBlockSize = 128;             // 一つのブロックのサイズ
+    private string aesIv = "6KGhH66PeU3cSLS7";  // 初期化ベクトル（Initialization Vectorの略称）
+    private string aesKey = "R38FYEzPyjxv0HrE"; // 鍵
+    // ======================================== //
+
     /// <summary>
     /// 暗号化しオブジェクトをファイルに書きこむ機能
     /// </summary>
@@ -59,14 +67,6 @@ public class SaveLoad
     /// <returns> 暗号化した結果のバイト列 </returns>
     private byte[] AesEncrypt(byte[] byteText)
     {
-        // AES設定値 aesIv・aesKeyは暗号化と複合化で同じものを使用する
-        //===================================
-        int aesKeySize = 128;               // 鍵のサイズを指定する
-        int aesBlockSize = 128;             // 一つのブロックのサイズ
-        string aesIv = "6KGhH66PeU3cSLS7";  // 初期化ベクトル（Initialization Vectorの略称）
-        string aesKey = "R38FYEzPyjxv0HrE"; // 鍵
-        //===================================
-
         // AESマネージャー取得
         var aes = GetAesManager(aesKeySize, aesBlockSize, aesIv, aesKey);
         // 暗号化処理を実行し、結果を返す。
@@ -81,13 +81,6 @@ public class SaveLoad
     /// <returns> 復号化した結果のバイト列 </returns>
     private byte[] AesDecrypt(byte[] byteText)
     {
-        // AES設定値
-        //===================================
-        int aesKeySize = 128;               // 鍵のサイズを指定する
-        int aesBlockSize = 128;             // 一つのブロックのサイズ
-        string aesIv = "6KGhH66PeU3cSLS7";  // 初期化ベクトル（Initialization Vectorの略称）
-        string aesKey = "R38FYEzPyjxv0HrE"; // 鍵
-        //===================================
 
         // AESマネージャー取得
         var aes = GetAesManager(aesKeySize, aesBlockSize, aesIv, aesKey);
