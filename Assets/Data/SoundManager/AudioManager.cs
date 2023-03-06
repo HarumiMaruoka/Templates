@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UniRx;
 
-public class AudioManager
+public static class AudioManager
 {
     private static ReactiveProperty<float> _bgmVolume = new ReactiveProperty<float>(1f);
     private static ReactiveProperty<float> _seVolume = new ReactiveProperty<float>(1f);

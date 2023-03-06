@@ -4,6 +4,7 @@ using UnityEngine;
 [System.Serializable]
 public class SaveLoadTester2
 {
+#pragma warning disable 0414
     [SerializeField]
     private int a = 1;
     [SerializeField]

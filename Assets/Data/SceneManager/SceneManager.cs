@@ -1,9 +1,11 @@
 using DG.Tweening;
+using DG.Tweening.Core;
+using DG.Tweening.Plugins.Options;
+using System;
 using UnityEngine;
 using UnityEngine.UI;
-using System;
 
-public class SceneManager
+public static class SceneManager
 {
     /// <summary>
     /// フェードイメージ用の描画優先度
@@ -15,6 +17,12 @@ public class SceneManager
     public static event Action OnFadeInCompleted = null;
 
     /// <summary>
+    /// 現在稼働中のDOTween <br/>
+    /// 同時に稼働できるDOTweenを一つに制限する為のフィールド
+    /// </summary>
+    private static TweenerCore<Color, Color, ColorOptions> _dotween = null;
+
+    /// <summary>
     /// 起動時にFadeInを登録する。<br/>
     /// このクラスがプロジェクトに存在するだけで強制的に追加されるので <br/>
     /// 配布、複製する際は注意すること。<br/>
@@ -24,7 +32,7 @@ public class SceneManager
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void Initialize()
     {
-        UnityEngine.SceneManagement.SceneManager.sceneLoaded += ((_, _) => FadeIn(5f, 0.6f));
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded += ((_, _) => FadeIn(3f, 0f));
     }
     /// <summary>
     /// フェードイン処理
@@ -33,21 +41,25 @@ public class SceneManager
     /// <param name="delayTime"> 遅延時間 </param>
     private static void FadeIn(float durationTime, float delayTime)
     {
-        // Canvas用ゲームオブジェクトを作製
-        // Canvasコンポーネントの割り当て,保存
-        var canvasComponent = GetCanvas(new GameObject());
+        if (_dotween == null)
+        {
+            // Canvas用ゲームオブジェクトを作製
+            // Canvasコンポーネントの割り当て,保存
+            var canvasComponent = GetCanvas(new GameObject());
 
-        // Image用ゲームオブジェクトを作製
-        // Imageコンポーネントの割り当て,保存
-        var imageComponent = GetImage(new GameObject(), canvasComponent);
+            // Image用ゲームオブジェクトを作製
+            // Imageコンポーネントの割り当て,保存
+            var imageComponent = GetImage(new GameObject(), canvasComponent, Color.black);
 
-        // 演出を再生。完了時にCanvasオブジェクト･Imageオブジェクトを破棄,完了時処理を実行。
-        imageComponent.DOFade(0f, durationTime).SetDelay(delayTime).
-            OnComplete(() =>
-            {
-                GameObject.Destroy(canvasComponent.gameObject);
-                OnFadeInCompleted?.Invoke();
-            });
+            // 演出を再生。完了時にCanvasオブジェクト･Imageオブジェクトを破棄,完了時処理を実行。
+            _dotween = imageComponent.DOFade(0f, durationTime).SetDelay(delayTime).
+                OnComplete(() =>
+                {
+                    GameObject.Destroy(canvasComponent.gameObject);
+                    OnFadeInCompleted?.Invoke();
+                    _dotween = null;
+                });
+        }
     }
     /// <summary>
     /// フェードアウトしシーンを変更する
@@ -56,18 +68,23 @@ public class SceneManager
     /// <param name="durationTime"> 暗転に掛ける時間 </param>
     public static void FadeOut(string nextSceneName, float durationTime)
     {
-        // Canvas用ゲームオブジェクトを作製
-        // Canvasコンポーネントの割り当て,保存
-        var canvasComponent = GetCanvas(new GameObject());
+        if (_dotween == null)
+        {
+            // Canvas用ゲームオブジェクトを作製
+            // Canvasコンポーネントの割り当て,保存
+            var canvasComponent = GetCanvas(new GameObject());
+            // Image用ゲームオブジェクトを作製
+            // Imageコンポーネントの割り当て,保存
+            var imageComponent = GetImage(new GameObject(), canvasComponent, Color.clear);
 
-        // Image用ゲームオブジェクトを作製
-        // Imageコンポーネントの割り当て,保存
-        var imageComponent = GetImage(new GameObject(), canvasComponent);
-
-        // 演出を再生。完了時にシーンを遷移。
-        imageComponent.DOFade(1f, durationTime).
-            OnComplete(() =>
-                UnityEngine.SceneManagement.SceneManager.LoadScene(nextSceneName));
+            // 演出を再生。完了時にシーンを遷移。
+            _dotween = imageComponent.DOFade(1f, durationTime).
+                OnComplete(() =>
+                {
+                    UnityEngine.SceneManagement.SceneManager.LoadScene(nextSceneName);
+                    _dotween = null;
+                });
+        }
     }
     /// <summary>
     /// セットアップ済みのキャンバスを取得する
@@ -90,8 +107,8 @@ public class SceneManager
     /// </summary>
     /// <param name="owner"> 割り当てるゲームオブジェクト </param>
     /// <param name="canvas"> キャンバスコンポーネント </param>
-    /// <returns></returns>
-    private static Image GetImage(GameObject owner, Canvas canvas)
+    /// <returns> セットアップ済みのイメージ </returns>
+    private static Image GetImage(GameObject owner, Canvas canvas, Color color)
     {
         // Imageコンポーネントの割り当て･取得
         var result = owner.AddComponent<Image>();
@@ -99,14 +116,11 @@ public class SceneManager
         result.transform.SetParent(canvas.transform);
         // 位置を初期化(何もしなければ左下を中央とする座標になるため)
         result.rectTransform.localPosition = Vector3.zero;
-        // 幅と高さを設定
-        var size = result.rectTransform.sizeDelta;
-        size.x = Screen.width;
-        size.y = Screen.height;
-        result.rectTransform.sizeDelta = size;
+        // アンカーポイントを設定する（ウィンドウの伸縮に対応する為の処理）
+        result.rectTransform.anchorMin = new Vector2(0f, 0f);
+        result.rectTransform.anchorMax = new Vector2(1f, 1f);
         // 色を設定
-        result.color = Color.black;
-
+        result.color = color;
         return result;
     }
 }
